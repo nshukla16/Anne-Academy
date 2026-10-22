@@ -1,0 +1,80 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: school_crm_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-school_crm}
+      MYSQL_USER: ${DB_USER:-school_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-school_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_password}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - school_crm_net
+
+  backend:
+    build:
+      context: ./backend
+    container_name: school_crm_backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-school_user}
+      DB_PASSWORD: ${DB_PASSWORD:-school_password}
+      DB_NAME: ${DB_NAME:-school_crm}
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - school_crm_net
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: school_crm_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - school_crm_net
+
+  adminer:
+    image: adminer:latest
+    container_name: school_crm_adminer
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+    networks:
+      - school_crm_net
+
+volumes:
+  mysql_data:
+
+networks:
+  school_crm_net:
+    driver: bridge
