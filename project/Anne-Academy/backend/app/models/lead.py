@@ -9,7 +9,7 @@ class LeadStatus(str, enum.Enum):
     contacted = "contacted"
     follow_up = "follow_up"
     admitted = "admitted"
-    lost = "lost"
+    lost = "lost" 
 
 
 class LeadSource(str, enum.Enum):

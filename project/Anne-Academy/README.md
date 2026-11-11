@@ -50,7 +50,7 @@ school-crm/
 
 4. The backend seeds a default admin on first boot:
    - **Email:** `admin@school.com`
-   - **Password:** `Admin@123` 
+   - **Password:** `Admin@123`
 
    Change this password immediately in a real deployment (there's no self-service
    "change password" endpoint yet — update it directly via `/api/v1/auth/register`
